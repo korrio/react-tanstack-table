@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ระบบจองสนามกีฬา (React TanStack Table)
 
-## Getting Started
+Next.js + shadcn/ui + TanStack Table สำหรับจัดการรายการจองสนามกีฬา ธีมขาวดำมินิมอล ใช้ฟอนต์ Noto Sans Thai
 
-First, run the development server:
+## เทคโนโลยี
+
+- [Next.js 16](https://nextjs.org/) + React 19 + TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/) — ธีมขาวดำมินิมอล
+- [@tanstack/react-table](https://tanstack.com/table) — ตารางขั้นสูง
+- [@tanstack/react-virtual](https://tanstack.com/virtual) — Virtual scrolling
+- [Noto Sans Thai](https://fonts.google.com/noto/specimen/Noto+Sans+Thai) — ฟอนต์ภาษาไทย
+
+## ฟีเจอร์
+
+- 🔍 ค้นหาแบบ Debounce (พร้อม shortcut ⌘K / Alt+K)
+- 🔃 เรียงลำดับคอลัมน์
+- 📄 Pagination + เลือกจำนวนแถวต่อหน้า
+- 🖥 โหมดขยายเต็มจอ
+- 📊 แถวสรุป (Summary row)
+- ⚡ Virtual scrolling สำหรับข้อมูลจำนวนมาก
+- 🌓 รองรับ Dark mode
+
+## เริ่มต้นใช้งาน
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิด [http://localhost:3000](http://localhost:3000) ในเบราว์เซอร์
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## โครงสร้างไฟล์สำคัญ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── page.tsx            # หน้าแรก (ใช้ TanstackBookingTable)
+│   ├── layout.tsx          # Root layout + Noto Sans Thai
+│   └── globals.css         # ธีมขาวดำมินิมอล
+├── components/
+│   ├── tanstack-booking-table.tsx  # ตารางหลัก (TanStack)
+│   ├── booking-table.tsx           # ตารางเดิม (สำรอง)
+│   ├── table-no-data.tsx
+│   └── ui/                 # shadcn/ui components
+├── hooks/
+│   ├── use-debounce.ts
+│   └── use-search-shortcut.ts
+└── lib/
+    ├── utils.ts
+    ├── table-styles.ts     # Tailwind classes กลาง
+    └── tanstack-helpers.ts # buildColumnDefs, alignment
+```
 
-## Learn More
+## Build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## อ้างอิง
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+ตัวอย่าง Vue component ต้นฉบับจาก Gist: [ts-table.vue](https://gist.github.com/oooasas12/db72f9d7668f41c1af7af1a2741df312)
