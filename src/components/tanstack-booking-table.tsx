@@ -23,11 +23,14 @@ import {
   Maximize2,
   Minimize2,
   X,
+  Loader2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSearchShortcut } from "@/hooks/use-search-shortcut";
+import { useBookingStore } from "@/stores/booking-store";
+import type { Booking } from "@/stores/booking-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,127 +40,6 @@ import {
   getHeaderAlignClass,
   getCellAlignClass,
 } from "@/lib/table-styles";
-
-interface Booking {
-  id: number;
-  customer: string;
-  court: string;
-  date: string;
-  time: string;
-  duration: string;
-  status: "confirmed" | "pending" | "cancelled";
-}
-
-const bookingData: Booking[] = [
-  {
-    id: 1,
-    customer: "สมชาย ใจดี",
-    court: "สนามแบดมินตัน A",
-    date: "23 เม.ย. 2026",
-    time: "09:00 - 11:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 2,
-    customer: "วิไลวรรณ สีสุก",
-    court: "สนามแบดมินตัน B",
-    date: "23 เม.ย. 2026",
-    time: "11:00 - 12:00",
-    duration: "1 ชั่วโมง",
-    status: "pending",
-  },
-  {
-    id: 3,
-    customer: "ประเสริฐ มากมี",
-    court: "สนามฟุตบอล 1",
-    date: "24 เม.ย. 2026",
-    time: "16:00 - 18:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 4,
-    customer: "อำพร แสงทอง",
-    court: "สนามบาสเกตบอล",
-    date: "24 เม.ย. 2026",
-    time: "18:00 - 20:00",
-    duration: "2 ชั่วโมง",
-    status: "cancelled",
-  },
-  {
-    id: 5,
-    customer: "มานี รักเรียน",
-    court: "สนามแบดมินตัน A",
-    date: "25 เม.ย. 2026",
-    time: "08:00 - 10:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 6,
-    customer: "สมศรี มีทรัพย์",
-    court: "สนามเทนนิส",
-    date: "25 เม.ย. 2026",
-    time: "14:00 - 16:00",
-    duration: "2 ชั่วโมง",
-    status: "pending",
-  },
-  {
-    id: 7,
-    customer: "ประวิทย์ สุขสม",
-    court: "สนามแบดมินตัน C",
-    date: "26 เม.ย. 2026",
-    time: "10:00 - 12:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 8,
-    customer: "กาญจนา มีสุข",
-    court: "สนามฟุตบอล 2",
-    date: "26 เม.ย. 2026",
-    time: "15:00 - 17:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 9,
-    customer: "สมพงษ์ แก้วกล้า",
-    court: "สนามแบดมินตัน A",
-    date: "27 เม.ย. 2026",
-    time: "09:00 - 10:00",
-    duration: "1 ชั่วโมง",
-    status: "pending",
-  },
-  {
-    id: 10,
-    customer: "อรทัย ใจดี",
-    court: "สนามเทนนิส",
-    date: "27 เม.ย. 2026",
-    time: "13:00 - 15:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 11,
-    customer: "ชาญชัย รุ่งเรือง",
-    court: "สนามบาสเกตบอล",
-    date: "28 เม.ย. 2026",
-    time: "17:00 - 19:00",
-    duration: "2 ชั่วโมง",
-    status: "confirmed",
-  },
-  {
-    id: 12,
-    customer: "พิมพ์ใจ งามเลิศ",
-    court: "สนามแบดมินตัน B",
-    date: "28 เม.ย. 2026",
-    time: "08:00 - 09:00",
-    duration: "1 ชั่วโมง",
-    status: "cancelled",
-  },
-];
 
 const statusConfig = {
   confirmed: {
@@ -178,14 +60,22 @@ const statusConfig = {
 };
 
 export function TanstackBookingTable() {
+  // -- Zustand store --
+  const bookings = useBookingStore((s) => s.bookings);
+  const loading = useBookingStore((s) => s.loading);
+  const updatingId = useBookingStore((s) => s.updatingId);
+  const error = useBookingStore((s) => s.error);
+  const fetchBookings = useBookingStore((s) => s.fetchBookings);
+  const confirmBookingAction = useBookingStore((s) => s.confirmBooking);
+  const cancelBookingAction = useBookingStore((s) => s.cancelBooking);
+
   // -- Refs --
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
   const bodyContainerRef = React.useRef<HTMLDivElement>(null);
   const headerWrapperRef = React.useRef<HTMLDivElement>(null);
 
-  // -- State --
-  const [data, setData] = React.useState<Booking[]>(bookingData);
+  // -- Local UI state --
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState({
@@ -193,7 +83,6 @@ export function TanstackBookingTable() {
     pageSize: 10,
   });
   const [isFocused, setIsFocused] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
   const [expanded, setExpanded] = React.useState(false);
   const [searchShortcut, setSearchShortcut] = React.useState("Alt+K");
 
@@ -203,6 +92,11 @@ export function TanstackBookingTable() {
       setSearchShortcut("⌘K");
     }
   }, []);
+
+  // -- Fetch on mount --
+  React.useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   // -- Debounced search --
   const debouncedFilter = useDebounce(globalFilter, 300);
@@ -286,8 +180,10 @@ export function TanstackBookingTable() {
         meta: { align: "center" },
         cell: ({ row }) => {
           const cfg = statusConfig[row.original.status];
+          const isUpdating = updatingId === row.original.id;
           return (
-            <Badge variant={cfg.variant} className={cfg.className}>
+            <Badge variant={cfg.variant} className={cn(cfg.className, isUpdating && "opacity-60")}>
+              {isUpdating && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
               {cfg.label}
             </Badge>
           );
@@ -301,6 +197,7 @@ export function TanstackBookingTable() {
         meta: { align: "center" },
         cell: ({ row }) => {
           const status = row.original.status;
+          const isUpdating = updatingId === row.original.id;
           return (
             <div className="flex items-center justify-end gap-2">
               {status === "pending" && (
@@ -308,9 +205,10 @@ export function TanstackBookingTable() {
                   size="sm"
                   variant="outline"
                   className="h-7 px-2 text-xs border-black hover:bg-black hover:text-white"
-                  onClick={() => confirmBooking(row.original.id)}
+                  onClick={() => confirmBookingAction(row.original.id)}
+                  disabled={isUpdating}
                 >
-                  อนุมัติ
+                  {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : "อนุมัติ"}
                 </Button>
               )}
               {status !== "cancelled" && (
@@ -318,7 +216,8 @@ export function TanstackBookingTable() {
                   size="sm"
                   variant="ghost"
                   className="h-7 px-2 text-xs text-muted-foreground hover:text-black"
-                  onClick={() => cancelBooking(row.original.id)}
+                  onClick={() => cancelBookingAction(row.original.id)}
+                  disabled={isUpdating}
                 >
                   ยกเลิก
                 </Button>
@@ -328,12 +227,12 @@ export function TanstackBookingTable() {
         },
       },
     ],
-    []
+    [updatingId, confirmBookingAction, cancelBookingAction]
   );
 
   // -- TanStack Table instance (learned from gist) --
   const table = useReactTable({
-    data,
+    data: bookings,
     columns,
     state: {
       sorting,
@@ -403,24 +302,6 @@ export function TanstackBookingTable() {
     };
   }, []);
 
-  // -- Actions --
-  const confirmBooking = (id: number) => {
-    setData((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "confirmed" as const } : b))
-    );
-  };
-
-  const cancelBooking = (id: number) => {
-    setData((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "cancelled" as const } : b))
-    );
-  };
-
-  const clearSearch = () => {
-    setGlobalFilter("");
-    searchInputRef.current?.focus();
-  };
-
   // -- Resize observer for table (learned from gist) --
   React.useEffect(() => {
     if (!tableContainerRef.current) return;
@@ -438,11 +319,16 @@ export function TanstackBookingTable() {
 
   // -- Summary values (learned from gist) --
   const summaryValues = React.useMemo(() => {
-    const confirmed = data.filter((d) => d.status === "confirmed").length;
-    const pending = data.filter((d) => d.status === "pending").length;
-    const cancelled = data.filter((d) => d.status === "cancelled").length;
+    const confirmed = bookings.filter((d) => d.status === "confirmed").length;
+    const pending = bookings.filter((d) => d.status === "pending").length;
+    const cancelled = bookings.filter((d) => d.status === "cancelled").length;
     return { confirmed, pending, cancelled };
-  }, [data]);
+  }, [bookings]);
+
+  const clearSearch = () => {
+    setGlobalFilter("");
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div
@@ -526,6 +412,13 @@ export function TanstackBookingTable() {
           </Button>
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Loading skeleton (learned from gist: loading-table) */}
       {loading && (
